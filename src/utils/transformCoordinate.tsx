@@ -1,5 +1,4 @@
 import proj4 from 'proj4';
-import { Coordinate } from '../types/types';
 
 const transformCoordinate = ({ lat, lng }: Coordinate) => {
   // EPSG:3878 ETRS89 / GK24FIN
