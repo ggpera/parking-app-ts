@@ -2,16 +2,14 @@ import { useState } from 'react';
 import { PolygonF, InfoWindowF } from '@react-google-maps/api';
 import transformCoordinate from '../utils/transformCoordinate';
 import data from '../data.json';
-type PolygonType = {
-  id: string;
-};
+
 const Polygon = () => {
   const [selectedPolygon, setSelectedPolygon] = useState<PolygonType | null>(
     null,
   );
-
-  const [selectedPolygonPosition, setSelectedPolygonPosition] =
-    useState(undefined);
+  const [infoWindowPosition, setInfoWindowPosition] = useState<
+    Coordinate | undefined
+  >(undefined);
   const geoJSONFeatures = data.features;
 
   return (
@@ -40,21 +38,39 @@ const Polygon = () => {
               fillColor: '#FF0000',
               fillOpacity: 0.35,
             }}
-            onClick={() => {
+            onClick={(e) => {
               feature === selectedPolygon
                 ? setSelectedPolygon(null)
                 : setSelectedPolygon(feature);
-              setSelectedPolygonPosition(coordinates[0]);
+              setInfoWindowPosition({
+                lat: e.latLng?.lat() || 0,
+                lng: e.latLng?.lng() || 0,
+              });
             }}
           />
         );
       })}
       {selectedPolygon && (
-        <InfoWindowF position={selectedPolygonPosition}>
+        <InfoWindowF
+          position={infoWindowPosition}
+          onCloseClick={() => {
+            setInfoWindowPosition(undefined);
+            setSelectedPolygon(null);
+          }}
+        >
           <div>
-            {/* Content for the InfoWindow */}
-            <h3>{selectedPolygon.id}</h3>
-            {/* Add other content here */}
+            <p>
+              Arkipäivät:{' '}
+              {selectedPolygon.properties.rajoitus_maksullinen_arkena}
+            </p>
+            <p>
+              Lauantai:{' '}
+              {selectedPolygon.properties.rajoitus_maksullinen_lauantaina}
+            </p>
+            <p>
+              Sunnuntai:{' '}
+              {selectedPolygon.properties.rajoitus_maksullinen_sunnuntaina}
+            </p>
           </div>
         </InfoWindowF>
       )}
