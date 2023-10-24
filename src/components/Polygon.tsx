@@ -1,54 +1,52 @@
 import { useState } from 'react';
 import { PolygonF, InfoWindowF } from '@react-google-maps/api';
+import { wktToGeoJSON } from '@terraformer/wkt';
+import useApi from '../hooks/useApi';
 import transformCoordinate from '../utils/transformCoordinate';
-import data from '../data.json';
 
 const Polygon = () => {
-  const [selectedPolygon, setSelectedPolygon] = useState<PolygonType | null>(
-    null,
-  );
-  const [infoWindowPosition, setInfoWindowPosition] = useState<
-    Coordinate | undefined
-  >(undefined);
-  const geoJSONFeatures = data.features;
+  const [selectedPolygon, setSelectedPolygon] = useState<PolygonType | null>(null);
+  const [infoWindowPosition, setInfoWindowPosition] = useState<Coordinate | undefined>(undefined);
+  const { data } = useApi<Root | null>('https://data.tampere.fi/data/api/action/datastore_search');
 
   return (
     <div>
-      {geoJSONFeatures.map((feature, index) => {
+      {data?.result.records.map((record, index) => {
         // Map all of the coordinates from the GeoJSON data
         // and transform the coordinates to a Google Maps compatible form
-        const coordinateArray = feature.geometry.coordinates[0][0];
-        const coordinates = coordinateArray.map(
-          (coordinate: [number, number]) => {
+        const coordinatesWKT = record.GEOLOC;
+        // Parse wkt string type into geoJSON
+        const coordinatesGeoJSON = wktToGeoJSON(coordinatesWKT);
+        if (coordinatesGeoJSON.type === 'Polygon') {
+          const coordinates = coordinatesGeoJSON.coordinates[0].map((coordinate) => {
             const transformedCoordinate = transformCoordinate({
               lat: coordinate[1],
               lng: coordinate[0],
             });
             return transformedCoordinate;
-          },
-        );
-        return (
-          <PolygonF
-            key={index}
-            path={coordinates}
-            options={{
-              strokeColor: '#FF0000',
-              strokeOpacity: 0.8,
-              strokeWeight: 2,
-              fillColor: '#FF0000',
-              fillOpacity: 0.35,
-            }}
-            onClick={(e) => {
-              feature === selectedPolygon
-                ? setSelectedPolygon(null)
-                : setSelectedPolygon(feature);
-              setInfoWindowPosition({
-                lat: e.latLng?.lat() || 0,
-                lng: e.latLng?.lng() || 0,
-              });
-            }}
-          />
-        );
+          });
+
+          return (
+            <PolygonF
+              key={index}
+              path={coordinates}
+              options={{
+                strokeColor: '#FF0000',
+                strokeOpacity: 0.8,
+                strokeWeight: 1,
+                fillColor: '#FF0000',
+                fillOpacity: 0.35,
+              }}
+              onClick={(e) => {
+                record === selectedPolygon ? setSelectedPolygon(null) : setSelectedPolygon(record);
+                setInfoWindowPosition({
+                  lat: e.latLng?.lat() || 0,
+                  lng: e.latLng?.lng() || 0,
+                });
+              }}
+            />
+          );
+        }
       })}
       {selectedPolygon && (
         <InfoWindowF
@@ -60,16 +58,8 @@ const Polygon = () => {
         >
           <div>
             <p>
-              Arkipäivät:{' '}
-              {selectedPolygon.properties.rajoitus_maksullinen_arkena}
-            </p>
-            <p>
-              Lauantai:{' '}
-              {selectedPolygon.properties.rajoitus_maksullinen_lauantaina}
-            </p>
-            <p>
-              Sunnuntai:{' '}
-              {selectedPolygon.properties.rajoitus_maksullinen_sunnuntaina}
+              id: {selectedPolygon._id} <br />
+              tyyppi: {selectedPolygon.KOHDETYYPPI}
             </p>
           </div>
         </InfoWindowF>
