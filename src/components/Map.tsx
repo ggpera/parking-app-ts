@@ -17,6 +17,14 @@ const Map = () => {
           mapContainerClassName='map-container'
           center={center}
           zoom={15}
+          options={{
+            styles: [
+              {
+                featureType: 'poi',
+                stylers: [{ visibility: 'off' }],
+              },
+            ],
+          }}
         >
           <Polygon />
         </GoogleMap>
